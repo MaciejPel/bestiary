@@ -15,7 +15,14 @@ app.use(express.json());
 app.use(fileUpload());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(helmet());
+app.use(
+	helmet.contentSecurityPolicy({
+		useDefaults: true,
+		directives: {
+			'img-src': ["'self'", 'https: data:'],
+		},
+	})
+);
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/characters', require('./routes/characterRoutes'));
 app.use('/api/media', require('./routes/mediaRoutes'));
