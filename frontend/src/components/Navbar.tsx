@@ -5,7 +5,6 @@ import { logout, reset, me } from '../features/auth/authSlice';
 import { AppDispatch } from '../app/store';
 import useAuth from '../hooks/useAuth';
 import useTheme from '../hooks/useTheme';
-import useWindowSize from '../hooks/useWindowSize';
 import {
 	AppBar,
 	Toolbar,
@@ -27,6 +26,7 @@ import {
 	ListItemIcon,
 	Divider,
 	ListItemText,
+	useMediaQuery,
 } from '@mui/material';
 import {
 	AutoStories,
@@ -50,7 +50,7 @@ const Navbar = () => {
 	const [value, setValue] = useState('home');
 	const { user } = useAuth();
 	const { isDark } = useTheme(theme);
-	const window = useWindowSize();
+	const width = useMediaQuery('(min-width: 900px)');
 
 	const handleTheme = () => {
 		setTheme(isDark ? 'light' : 'dark');
@@ -87,7 +87,7 @@ const Navbar = () => {
 
 	return (
 		<>
-			{window.width > 768 ? (
+			{width ? (
 				<AppBar position="fixed">
 					<Container>
 						<Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -145,7 +145,7 @@ const Navbar = () => {
 					</Container>
 				</AppBar>
 			) : (
-				<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1 }} elevation={3}>
+				<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 3 }} elevation={3}>
 					<Drawer anchor="left" open={state} onClose={toggleDrawer()}>
 						<Box
 							sx={{ width: 250 }}
@@ -212,7 +212,7 @@ const Navbar = () => {
 							<BottomNavigationAction
 								component={Link}
 								to="/add-character"
-								label="New beast"
+								label="New Char"
 								value="add-character"
 								icon={<AddCircleOutline />}
 							/>

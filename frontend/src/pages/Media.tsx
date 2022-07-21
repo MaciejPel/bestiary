@@ -10,7 +10,6 @@ import {
 	CardMedia,
 	CardContent,
 	Box,
-	CircularProgress,
 	Typography,
 	CardActions,
 	IconButton,
@@ -18,14 +17,19 @@ import {
 	Modal,
 	Button,
 } from '@mui/material';
-import { Favorite, Delete, Launch } from '@mui/icons-material';
+import { Favorite, Delete, Launch, AssignmentInd } from '@mui/icons-material';
 import Masonry from '@mui/lab/Masonry';
 import useAuth from '../hooks/useAuth';
+import Loading from '../components/Loading';
+import Error from '../components/Error';
 
 const Media = () => {
 	const { data, isLoading, isSuccess, isError } = useGetMediaQuery();
-	const [open, setOpen] = useState(false);
-	const handleModal = (state: boolean) => setOpen(state);
+	const [modalState, setModalState] = useState<{ open: boolean; mediaID: string }>({
+		open: false,
+		mediaID: '',
+	});
+	const handleModal = (state: boolean, mediaID: string) => setModalState({ open: state, mediaID });
 
 	const [likeMedia] = useLikeMediaMutation();
 	const [deleteMedia] = useDeleteMediaMutation();
@@ -36,7 +40,7 @@ const Media = () => {
 		top: '50%',
 		left: '50%',
 		transform: 'translate(-50%, -50%)',
-		width: 400,
+		width: { xs: 300, md: 400 },
 		bgcolor: 'background.paper',
 		boxShadow: 6,
 		borderRadius: '8px',
@@ -45,14 +49,10 @@ const Media = () => {
 
 	let content;
 	if (isLoading) {
-		content = (
-			<Box display="flex" justifyContent="center" alignItems="center">
-				<CircularProgress />
-			</Box>
-		);
+		content = <Loading />;
 	} else if (isSuccess) {
-		content = data.length && (
-			<Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}>
+		content = data.length ? (
+			<Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4 }} sx={{ margin: 0 }}>
 				{data.map((media) => (
 					<Grow in={true} key={media._id}>
 						<Card variant="outlined">
@@ -61,50 +61,37 @@ const Media = () => {
 								image={`https://i.imgur.com/${media.hash}.${media.fileType}`}
 								alt={media.fileName}
 							/>
-							<CardContent sx={{ padding: '12px 12px 0px 12px' }}>
+							<CardContent sx={{ padding: '8px 8px 0px 8px' }}>
 								<Typography variant="h6" component="div" noWrap>
 									{media.fileName}
 								</Typography>
 							</CardContent>
 							<CardActions
 								disableSpacing
-								sx={{ justifyContent: 'flex-end', padding: '0px 12px 6px 12px' }}
+								sx={{ justifyContent: 'flex-end', padding: '0px 8px 0px 8px' }}
 							>
 								<IconButton
 									onClick={() => likeMedia(media._id)}
 									color={user && media.likes.includes(user._id) ? 'error' : 'default'}
 								>
 									<Favorite />
+									<Typography variant="h6" component="div">
+										{media.likes.length}
+									</Typography>
 								</IconButton>
-								<Typography variant="h6" component="div">
-									{media.likes.length}
-								</Typography>
-								<IconButton onClick={() => handleModal(true)}>
+								<IconButton
+									onClick={() => {
+										handleModal(true, media._id);
+									}}
+								>
 									<Delete />
 								</IconButton>
-								<Modal open={open} onClose={() => handleModal(false)}>
-									<Box sx={style}>
-										<Typography variant="h6" color="primary">
-											Are you sure?
-										</Typography>
-										<Typography color="primary">
-											Media is about to be deleted pernamentaly.
-										</Typography>
-										<Box display="flex" justifyContent="flex-end" alignItems="flex-end">
-											<Button
-												variant="text"
-												color="error"
-												onClick={() => {
-													deleteMedia(media._id);
-													handleModal(false);
-												}}
-												endIcon={<Delete />}
-											>
-												DELETE
-											</Button>
-										</Box>
-									</Box>
-								</Modal>
+								<IconButton
+								// onClick={() => {
+								// }}
+								>
+									<AssignmentInd />
+								</IconButton>
 								<a
 									href={`https://i.imgur.com/${media.hash}.${media.fileType}`}
 									target="_blank"
@@ -118,14 +105,35 @@ const Media = () => {
 						</Card>
 					</Grow>
 				))}
+				<Modal open={modalState.open} onClose={() => handleModal(false, '')}>
+					<Box sx={style}>
+						<Typography variant="h6">Are you sure?</Typography>
+						<Typography>Media is about to be deleted pernamentaly.</Typography>
+						<Box display="flex" justifyContent="flex-end" alignItems="flex-end" marginTop={2}>
+							<Button
+								variant="contained"
+								color="error"
+								onClick={() => {
+									deleteMedia(modalState.mediaID);
+									handleModal(false, '');
+								}}
+								endIcon={<Delete />}
+							>
+								Delete
+							</Button>
+						</Box>
+					</Box>
+				</Modal>
 			</Masonry>
-		);
-	} else if (isError) {
-		content = (
-			<Box display="flex" justifyContent="center" alignItems="center">
-				Error occured
+		) : (
+			<Box display="flex" justifyContent="center" alignItems="center" height="80vh">
+				<Typography variant="h6" color="inherit">
+					Media will appear here
+				</Typography>
 			</Box>
 		);
+	} else if (isError) {
+		content = <Error />;
 	}
 
 	return <Container className="container container--content">{content}</Container>;

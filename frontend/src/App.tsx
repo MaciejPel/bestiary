@@ -19,6 +19,7 @@ import '@fontsource/roboto/700.css';
 import './App.css';
 import { AlertType } from './types/types';
 import { grey } from '@mui/material/colors';
+import NotFound from './pages/NotFound';
 
 const App = () => {
 	const { isDark } = useTheme();
@@ -31,8 +32,10 @@ const App = () => {
 	const darkTheme = createTheme({
 		palette: {
 			mode: 'dark',
-			primary: {
-				main: grey[100],
+		},
+		typography: {
+			allVariants: {
+				color: 'white',
 			},
 		},
 	});
@@ -40,6 +43,15 @@ const App = () => {
 	const lightTheme = createTheme({
 		palette: {
 			mode: 'light',
+		},
+		components: {
+			MuiAppBar: {
+				styleOverrides: {
+					colorPrimary: {
+						backgroundColor: grey[900],
+					},
+				},
+			},
 		},
 	});
 
@@ -63,13 +75,14 @@ const App = () => {
 							<Route path="/media" element={<ProtectedRoute children={<Media />} />} />
 							<Route
 								path="/add-character"
-								element={<ProtectedRoute children={<AddCharacter />} />}
+								element={<ProtectedRoute children={<AddCharacter setAlert={setAlert} />} />}
 							/>
 							<Route
 								path="/character/:characterID"
 								element={<ProtectedRoute children={<Character />} />}
 							/>
 							<Route path="/user/:userID" element={<ProtectedRoute children={<User />} />} />
+							<Route path="/*" element={<NotFound />} />
 						</Routes>
 					</Paper>
 				</ThemeProvider>

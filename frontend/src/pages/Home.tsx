@@ -9,12 +9,13 @@ import {
 	CardContent,
 	Box,
 	Icon,
-	CircularProgress,
 	Typography,
 	Grow,
 } from '@mui/material';
 import { Favorite } from '@mui/icons-material';
 import Masonry from '@mui/lab/Masonry';
+import Loading from '../components/Loading';
+import Error from '../components/Error';
 
 const Home = () => {
 	const { user } = useAuth();
@@ -22,16 +23,12 @@ const Home = () => {
 
 	let content;
 	if (isLoading) {
-		content = (
-			<Box display="flex" justifyContent="center" alignItems="center">
-				<CircularProgress />
-			</Box>
-		);
+		content = <Loading />;
 	} else if (isSuccess) {
 		content = (
 			<>
-				{data.length ? (
-					<Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}>
+				{data?.length ? (
+					<Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4 }} spacing={2}>
 						{data.map((character) => (
 							<Grow in={true} key={character._id}>
 								<Card component={Link} to={`/character/${character._id}`} variant="outlined">
@@ -64,7 +61,7 @@ const Home = () => {
 						))}
 					</Masonry>
 				) : (
-					<Box display="flex" alignItems="center">
+					<Box display="flex" justifyContent="center" alignItems="center" height="80vh">
 						<Typography variant="h6" color="inherit">
 							Characters will appear here
 						</Typography>
@@ -73,11 +70,7 @@ const Home = () => {
 			</>
 		);
 	} else if (isError) {
-		content = (
-			<Box display="flex" justifyContent="center" alignItems="center">
-				Error occured
-			</Box>
-		);
+		content = <Error />;
 	}
 
 	return <Container className="container container--content">{content}</Container>;

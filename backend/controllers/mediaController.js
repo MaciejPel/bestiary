@@ -2,10 +2,11 @@ const asyncHandler = require('express-async-handler');
 const Media = require('../models/mediaModel');
 const Character = require('../models/characterModel');
 const { deleteImage } = require('../config/imgurAPI');
-var mongoose = require('mongoose');
 
 const getMedia = asyncHandler(async (req, res) => {
-	const media = await Media.find({}, { hash: 1, fileName: 1, fileType: 1, likes: 1, user: 1 });
+	const media = await Media.find({}, { hash: 1, fileName: 1, fileType: 1, likes: 1, user: 1 }).sort(
+		{ createdAt: -1 }
+	);
 
 	const result = [];
 	for (const i in media) {

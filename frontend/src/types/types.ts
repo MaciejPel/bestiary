@@ -77,3 +77,15 @@ export type AlertType = {
 	type: statusTypes | null;
 	message: null | string;
 };
+
+export type CharacterUploadType = {
+	name: string;
+	file: Blob | null;
+	fileName: string;
+};
+
+export type CharacterUploadTypeExtended = {
+	name: string;
+	files: Blob[];
+	fileNames: string[];
+};

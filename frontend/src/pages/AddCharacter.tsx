@@ -1,17 +1,25 @@
 import Compressor from 'compressorjs';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Spinner from '../components/Spinner';
 import { useCreateCharacterMutation } from '../features/api/apiSlice';
-import { Container, Card } from '@mui/material';
+import {
+	Container,
+	Button,
+	Grid,
+	Paper,
+	TextField,
+	ButtonGroup,
+	Typography,
+	Box,
+	Grow,
+} from '@mui/material';
+import Loading from '../components/Loading';
+import { CharacterUploadType } from '../types/types';
+import { statusTypes, AlertType } from '../types/types';
 
-type CharacterUploadType = {
-	name: string;
-	file: File | Blob | null;
-	fileName: string;
-};
-
-const AddCharacter = () => {
+const AddCharacter: React.FC<{
+	setAlert: React.Dispatch<React.SetStateAction<AlertType>>;
+}> = ({ setAlert }) => {
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState<boolean>(false);
 	const [character, setCharacter] = useState<CharacterUploadType>({
@@ -23,7 +31,6 @@ const AddCharacter = () => {
 	const characterForm = new FormData();
 
 	const handleChangeImage = (e: React.FormEvent<HTMLInputElement>) => {
-		setLoading(true);
 		const target = e.target as HTMLInputElement;
 		if (target.files) ImageHandle(target.files[0]);
 	};
@@ -34,6 +41,7 @@ const AddCharacter = () => {
 	};
 
 	const ImageHandle = (file: File) => {
+		setLoading(true);
 		new Compressor(file, {
 			success: (compressedImage) => {
 				setCharacter((prev) => ({
@@ -53,10 +61,24 @@ const AddCharacter = () => {
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		if (character.name.length >= 2 && character.name.length <= 25) {
+		if (
+			character.name.length > 2 &&
+			character.name.length < 22 &&
+			character.file != null &&
+			character.fileName
+		) {
 			characterForm.append('name', character.name);
-			character.file && characterForm.append('file', character.file, character.fileName);
+			characterForm.append('file', character.file, character.fileName);
 			createCharacter(characterForm);
+		} else {
+			setAlert({
+				open: true,
+				type: statusTypes.ERROR,
+				message:
+					character.name.length < 3 || character.name.length > 22
+						? 'Name should be 3-22 characters long'
+						: 'File is missing',
+			});
 		}
 	};
 
@@ -72,79 +94,81 @@ const AddCharacter = () => {
 		isSuccess && navigate(`/character/${data?._id}`);
 	}, [isSuccess, data?._id, navigate]);
 
+	if (isLoading) {
+		return <Loading />;
+	}
+
 	return (
-		<Container
-			className="container"
-			sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-		>
-			<Card variant="outlined">
-				{isLoading ? (
-					<Spinner />
-				) : (
-					<div className="add-character__form__wrapper">
-						<form
-							onSubmit={handleSubmit}
-							encType="multipart/form-data"
-							className="add-character__form"
+		<Container className="container container--content">
+			<Grow in={true}>
+				<Grid
+					container
+					spacing={2}
+					columns={{ xs: 1, md: 4 }}
+					component="form"
+					onSubmit={handleSubmit}
+					className="form"
+				>
+					<Grid item xs={12} md={3} className="form__label">
+						<Paper
+							sx={{
+								height: '100%',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								cursor: 'pointer',
+							}}
+							elevation={3}
+							component="label"
+							htmlFor="file"
+							onDragOver={(e: React.DragEvent<HTMLElement>) => e.preventDefault()}
+							onDrop={handleDrop}
 						>
-							<div className="add-character__drop-area">
-								<label
-									htmlFor="file"
-									className="add-character__label"
-									onDragOver={(e) => e.preventDefault()}
-									onDrop={handleDrop}
-								>
-									<div className="add-character__drop">
-										{character.file ? (
-											<div>
-												<img
-													src={URL.createObjectURL(character.file)}
-													alt=""
-													className="add-character__image"
-												/>
-											</div>
-										) : (
-											'Drag & Drop (or select) character main picture'
-										)}
-									</div>
-								</label>
-								<input
-									type="file"
-									id="file"
-									accept=".jpeg,.jpg,.png,.gif"
-									onChange={handleChangeImage}
-									className="add-character__input__file"
-								/>
-							</div>
-							<div className="add-character__form-area">
-								<input
-									type="text"
-									name="name"
-									onChange={handleChangeName}
+							{!character.file ? (
+								<Typography variant="h6">Drag & Drop or select main image</Typography>
+							) : (
+								<Box className="img__wrapper" sx={{ padding: '16px' }}>
+									<img
+										src={URL.createObjectURL(character.file)}
+										alt=""
+										className="img__wrapper__image"
+									/>
+								</Box>
+							)}
+							<input
+								hidden
+								type="file"
+								id="file"
+								accept=".jpeg,.jpg,.png"
+								onChange={handleChangeImage}
+							/>
+						</Paper>
+					</Grid>
+					<Grid item xs={12} md={1} display="flex" justifyContent="center" alignItems="center">
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={12}>
+								<TextField
+									label="Character's name"
 									value={character.name}
+									onChange={handleChangeName}
+									fullWidth
 									required
-									minLength={2}
-									maxLength={25}
-									className="add-character__input__text"
-									placeholder="Character name"
 								/>
-								<input
-									type="reset"
-									onClick={handleReset}
-									className="add-character__input__reset"
-									value="Reset"
-								/>
-								<input
-									type="submit"
-									disabled={loading}
-									className="add-character__input__submit"
-									value="Submit"
-								/>
-							</div>
-						</form>
-					</div>
-				)}
-			</Card>
+							</Grid>
+							<Grid item xs={12} md={12}>
+								<ButtonGroup variant="contained" fullWidth>
+									<Button variant="contained" color="warning" onClick={handleReset} fullWidth>
+										Reset
+									</Button>
+									<Button variant="contained" type="submit" fullWidth disabled={loading}>
+										Submit
+									</Button>
+								</ButtonGroup>
+							</Grid>
+						</Grid>
+					</Grid>
+				</Grid>
+			</Grow>
 		</Container>
 	);
 };

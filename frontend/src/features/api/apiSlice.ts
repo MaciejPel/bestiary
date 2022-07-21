@@ -42,12 +42,20 @@ export const apiSlice = createApi({
 			}),
 			invalidatesTags: ['Media', 'Characters'],
 		}),
-		deleteCharacter: builder.mutation<{ id: string }, string>({
-			query: (characterId) => ({
-				url: `/characters/${characterId}`,
-				method: 'DELETE',
+		updateCharacter: builder.mutation<CharacterType, { characterID: string; data: FormData }>({
+			query: ({ characterID, data }) => ({
+				url: `/characters/${characterID}`,
+				method: 'PUT',
+				body: data,
 			}),
 			invalidatesTags: ['Media', 'Characters'],
+		}),
+		deleteCharacter: builder.mutation<{ id: string }, string>({
+			query: (characterID) => ({
+				url: `/characters/${characterID}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['Media', 'Characters', 'Users'],
 		}),
 		getMedia: builder.query<MediaType[], void>({
 			query: () => ({
@@ -57,18 +65,18 @@ export const apiSlice = createApi({
 			providesTags: ['Media'],
 		}),
 		likeMedia: builder.mutation<MediaType, string>({
-			query: (mediaId) => ({
-				url: `/media/${mediaId}`,
+			query: (mediaID) => ({
+				url: `/media/${mediaID}`,
 				method: 'PUT',
 			}),
 			invalidatesTags: ['Media', 'Characters'],
 		}),
 		deleteMedia: builder.mutation<{ id: string }, string>({
-			query: (mediaId) => ({
-				url: `/media/${mediaId}`,
+			query: (mediaID) => ({
+				url: `/media/${mediaID}`,
 				method: 'DELETE',
 			}),
-			invalidatesTags: ['Media', 'Characters'],
+			invalidatesTags: ['Media', 'Characters', 'Users'],
 		}),
 		getUser: builder.query<UserType, string>({
 			query: (userID) => ({
@@ -84,6 +92,7 @@ export const {
 	useGetCharacterQuery,
 	useGetCharactersQuery,
 	useCreateCharacterMutation,
+	useUpdateCharacterMutation,
 	useDeleteCharacterMutation,
 	useGetMediaQuery,
 	useLikeMediaMutation,

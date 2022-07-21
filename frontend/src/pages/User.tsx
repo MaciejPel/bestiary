@@ -4,7 +4,6 @@ import { useGetUserQuery } from '../features/api/apiSlice';
 import {
 	Container,
 	Box,
-	CircularProgress,
 	Typography,
 	List,
 	ListItem,
@@ -15,6 +14,8 @@ import {
 	Grow,
 } from '@mui/material';
 import { CalendarMonth, Image, GroupAdd } from '@mui/icons-material';
+import Error from '../components/Error';
+import Loading from '../components/Loading';
 
 const User = () => {
 	const { userID } = useParams<keyof UserParams>() as UserParams;
@@ -22,11 +23,7 @@ const User = () => {
 
 	let content;
 	if (isLoading) {
-		content = (
-			<Box display="flex" justifyContent="center" alignItems="center">
-				<CircularProgress />
-			</Box>
-		);
+		content = <Loading />;
 	} else if (isSuccess) {
 		content = (
 			<Grow in={true}>
@@ -69,9 +66,7 @@ const User = () => {
 			</Grow>
 		);
 	} else if (isError) {
-		<Box display="flex" justifyContent="center" alignItems="center">
-			Error occured
-		</Box>;
+		<Error />;
 	}
 
 	return (
