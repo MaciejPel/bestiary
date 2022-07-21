@@ -79,7 +79,7 @@ const App = () => {
 							/>
 							<Route
 								path="/character/:characterID"
-								element={<ProtectedRoute children={<Character />} />}
+								element={<ProtectedRoute children={<Character setAlert={setAlert} />} />}
 							/>
 							<Route path="/user/:userID" element={<ProtectedRoute children={<User />} />} />
 							<Route path="/*" element={<NotFound />} />

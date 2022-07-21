@@ -20,7 +20,6 @@
 		"express": "^4.18.1",
 		"express-async-handler": "^1.2.0",
 		"express-fileupload": "^1.4.0",
-		"googleapis": "^105.0.0",
 		"helmet": "^5.1.0",
 		"imgur": "^2.2.0",
 		"jsonwebtoken": "^8.5.1",

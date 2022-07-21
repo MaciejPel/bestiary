@@ -6,9 +6,13 @@ import {
 	useUpdateCharacterMutation,
 	useDeleteCharacterMutation,
 } from '../features/api/apiSlice';
-import { toast } from 'react-toastify';
 import Compressor from 'compressorjs';
-import { CharacterParams, CharacterUploadTypeExtended } from '../types/types';
+import {
+	AlertType,
+	CharacterParams,
+	CharacterUploadTypeExtended,
+	statusTypes,
+} from '../types/types';
 import {
 	Container,
 	Button,
@@ -34,6 +38,8 @@ import Masonry from '@mui/lab/Masonry';
 import useAuth from '../hooks/useAuth';
 
 const uploadLimit = 8;
+const uploadSize = 8;
+
 const style = {
 	position: 'absolute' as 'absolute',
 	top: '50%',
@@ -46,7 +52,9 @@ const style = {
 	p: 2,
 };
 
-const Character: React.FC = () => {
+const Character: React.FC<{ setAlert: React.Dispatch<React.SetStateAction<AlertType>> }> = ({
+	setAlert,
+}) => {
 	const navigate = useNavigate();
 	const { characterID } = useParams<keyof CharacterParams>() as CharacterParams;
 	const { user } = useAuth();
@@ -66,20 +74,18 @@ const Character: React.FC = () => {
 		setStateManager((prev) => ({ ...prev, modalState: state }));
 
 	const [stateManager, setStateManager] = useState<{
-		imageCompression: boolean;
 		editCard: boolean;
-		dragAndDropCard: boolean;
 		modalState: boolean;
-	}>({ imageCompression: false, editCard: false, dragAndDropCard: false, modalState: false });
+	}>({ editCard: false, modalState: false });
 
 	const handleChangeImage = (e: React.ChangeEvent<HTMLInputElement>) => {
 		e.preventDefault();
 		if (e.target.files) {
 			let fileList = manageListOfFiles(e.target.files);
-			imageCompression(fileList, fileList.length);
+			imageCompressor(fileList, fileList.length);
 		}
-		if (e.target.files && e.target.files.length >= uploadLimit) {
-			toast.warning('Too many files provided, upload will be reduced');
+		if (e.target.files && e.target.files.length > uploadLimit) {
+			setAlert({ open: true, type: statusTypes.ERROR, message: 'Input has been reduced' });
 		}
 	};
 
@@ -87,10 +93,10 @@ const Character: React.FC = () => {
 		e.preventDefault();
 		if (e.dataTransfer.files) {
 			let fileList = manageListOfFiles(e.dataTransfer.files);
-			imageCompression(fileList, fileList.length);
+			imageCompressor(fileList, fileList.length);
 		}
-		if (e.dataTransfer.files && e.dataTransfer.files.length >= uploadLimit) {
-			toast.warning('Too many files provided, upload will be reduced');
+		if (e.dataTransfer.files.length > uploadLimit) {
+			setAlert({ open: true, type: statusTypes.ERROR, message: 'Input has been reduced' });
 		}
 	};
 
@@ -104,27 +110,26 @@ const Character: React.FC = () => {
 		return fileList;
 	};
 
-	const imageCompression = (files: File[], filesLength: number) => {
-		setStateManager((prev) => ({ ...prev, imageCompression: true }));
-		let f: Blob[] = [];
-		let g: string[] = [];
+	const imageCompressor = (files: File[], filesLength: number) => {
+		let filesTemp: Blob[] = [];
+		let fileNamesTemp: string[] = [];
 		for (let i = 0; i < filesLength; i++) {
 			const file = files[i];
-			if (!file.type.includes('image')) continue;
+			if (!file.type.includes('image') || file.size > uploadSize * 1024 * 1024) {
+				setAlert({ open: true, type: statusTypes.ERROR, message: 'Input has been reduced' });
+				continue;
+			}
 			new Compressor(file, {
 				success: (compressedImage) => {
-					f.push(compressedImage);
-					g.push(file.name.split('.').slice(0, -1).join(''));
+					filesTemp.push(compressedImage);
+					fileNamesTemp.push(file.name.split('.').slice(0, -1).join(''));
 					setCharacter((prev) => ({
 						...prev,
-						files: f,
-						fileNames: g,
+						files: filesTemp,
+						fileNames: fileNamesTemp,
 					}));
 				},
 			});
-			if (i + 1 === filesLength) {
-				setStateManager((prev) => ({ ...prev, imageCompression: false }));
-			}
 		}
 	};
 
@@ -176,82 +181,6 @@ const Character: React.FC = () => {
 					<Grid item xs={1} md={1}>
 						<Grow in={true}>
 							<Card variant="outlined">
-								<CardMedia
-									component="img"
-									image={`https://i.imgur.com/${
-										data.images.length ? data.images[0].hash : 'WxNkK7J'
-									}.${data.images.length ? data.images[0].fileType : 'png'}`}
-									alt={data.name}
-								/>
-								<CardContent
-									sx={{
-										padding: '8px 8px 0px 8px',
-									}}
-								>
-									<Typography variant="h6" component="div" noWrap>
-										{data.name}
-									</Typography>
-								</CardContent>
-								<CardActions
-									disableSpacing
-									sx={{ justifyContent: 'flex-end', padding: '0px 8px 0px 8px' }}
-								>
-									<IconButton
-										onClick={() => {
-											setStateManager((prev) => ({
-												...prev,
-												dragAndDropCard: stateManager.editCard
-													? false
-													: stateManager.dragAndDropCard,
-											}));
-											setStateManager((prev) => ({ ...prev, editCard: !prev.editCard }));
-										}}
-									>
-										<Edit />
-									</IconButton>
-									<IconButton
-										onClick={() => likeMedia(data.images[0]._id)}
-										color={user && data.images[0].likes.includes(user._id) ? 'error' : 'default'}
-									>
-										<Favorite />
-										<Typography variant="h5" component="span">
-											{data.totalLikes}
-										</Typography>
-									</IconButton>
-									<a
-										href={`https://i.imgur.com/${data.images[0].hash}.${data.images[0].fileType}`}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										<IconButton>
-											<Launch />
-										</IconButton>
-									</a>
-								</CardActions>
-							</Card>
-						</Grow>
-					</Grid>
-					<Grid item xs={1} md={1}>
-						<Grow in={stateManager.editCard}>
-							<Paper
-								elevation={3}
-								sx={{
-									height: '100%',
-									paddingX: '8px',
-									display: 'flex',
-									flexDirection: 'column',
-									justifyContent: 'center',
-									gap: '8px',
-								}}
-							>
-								<TextField
-									label="Character's name"
-									value={character.name}
-									fullWidth
-									required
-									onChange={handleChangeName}
-									sx={{ marginTop: '8px' }}
-								/>
 								<Modal open={stateManager.modalState} onClose={() => handleModal(false)}>
 									<Box sx={style}>
 										<Typography variant="h6">Are you sure?</Typography>
@@ -279,33 +208,96 @@ const Character: React.FC = () => {
 										</Box>
 									</Box>
 								</Modal>
-								<Button
-									variant="contained"
-									fullWidth
-									onClick={() =>
-										setStateManager((prev) => ({ ...prev, dragAndDropCard: !prev.dragAndDropCard }))
-									}
+								<CardMedia
+									component="img"
+									image={`https://i.imgur.com/${
+										data.images.length ? data.images[0].hash : 'WxNkK7J'
+									}.${data.images.length ? data.images[0].fileType : 'png'}`}
+									alt={data.name}
+								/>
+								<CardContent
+									sx={{
+										padding: '8px 8px 0px 8px',
+									}}
 								>
-									Add Images
-								</Button>
-								<Button
-									variant="contained"
-									color="error"
-									fullWidth
-									onClick={() => handleModal(true)}
+									<Typography variant="h6" component="div" noWrap>
+										{data.name}
+									</Typography>
+								</CardContent>
+								<CardActions
+									disableSpacing
+									sx={{ justifyContent: 'flex-end', padding: '0px 8px 0px 8px' }}
 								>
-									Delete character
-								</Button>
+									<Tooltip title="Edit character">
+										<IconButton
+											onClick={() => {
+												setStateManager((prev) => ({ ...prev, editCard: !prev.editCard }));
+											}}
+										>
+											<Edit />
+										</IconButton>
+									</Tooltip>
+									<Tooltip title="Like" arrow>
+										<IconButton
+											onClick={() => likeMedia(data.images[0]._id)}
+											color={user && data.images[0].likes.includes(user._id) ? 'error' : 'default'}
+										>
+											<Favorite />
+											<Typography variant="h5" component="span">
+												{data.totalLikes}
+											</Typography>
+										</IconButton>
+									</Tooltip>
+									<Tooltip title="Delete character" arrow>
+										<IconButton
+											onClick={() => {
+												handleModal(true);
+											}}
+										>
+											<Delete />
+										</IconButton>
+									</Tooltip>
+									<Tooltip title="Open in new tab" arrow>
+										<a
+											href={`https://i.imgur.com/${data.images[0].hash}.${data.images[0].fileType}`}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<IconButton>
+												<Launch />
+											</IconButton>
+										</a>
+									</Tooltip>
+								</CardActions>
+							</Card>
+						</Grow>
+					</Grid>
+					<Grid item xs={1} md={1}>
+						<Grow in={stateManager.editCard}>
+							<Paper
+								elevation={3}
+								sx={{
+									height: '100%',
+									paddingX: '8px',
+									display: 'flex',
+									flexDirection: 'column',
+									justifyContent: 'center',
+									gap: '8px',
+								}}
+							>
+								<TextField
+									label="Character's name"
+									value={character.name}
+									fullWidth
+									required
+									onChange={handleChangeName}
+									sx={{ marginTop: '8px' }}
+								/>
 								<ButtonGroup variant="contained" fullWidth sx={{ marginBottom: '8px' }}>
 									<Button variant="contained" color="warning" fullWidth onClick={handleReset}>
 										Reset
 									</Button>
-									<Button
-										variant="contained"
-										type="submit"
-										fullWidth
-										disabled={stateManager.imageCompression}
-									>
+									<Button variant="contained" type="submit" fullWidth>
 										Submit
 									</Button>
 								</ButtonGroup>
@@ -313,7 +305,7 @@ const Character: React.FC = () => {
 						</Grow>
 					</Grid>
 					<Grid item xs={12} md={2}>
-						<Grow in={stateManager.dragAndDropCard}>
+						<Grow in={stateManager.editCard}>
 							<Paper
 								elevation={3}
 								sx={{
@@ -418,7 +410,7 @@ const Character: React.FC = () => {
 											<Delete />
 										</IconButton>
 									</Tooltip>
-									<Tooltip title="Open in new window" arrow>
+									<Tooltip title="Open in new tab" arrow>
 										<a
 											href={`https://i.imgur.com/${data.images[0].hash}.${data.images[0].fileType}`}
 											target="_blank"
