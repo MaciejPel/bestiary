@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv').config();
 const fileUpload = require('express-fileupload');
