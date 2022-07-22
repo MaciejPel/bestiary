@@ -24,7 +24,8 @@
 		"helmet": "^5.1.0",
 		"imgur": "^2.2.0",
 		"jsonwebtoken": "^8.5.1",
-		"mongoose": "^6.4.3"
+		"mongoose": "^6.4.3",
+		"tslib": "^2.4.0"
 	},
 	"devDependencies": {
 		"concurrently": "^7.2.2",
