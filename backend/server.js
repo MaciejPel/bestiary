@@ -7,7 +7,6 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./middleware/errorMiddleware');
 require('./config/imgurAPI');
-const port = process.env.PORT || 5000;
 
 connectDB();
 const app = express();
@@ -39,4 +38,4 @@ if (process.env.ENVIRONMENT === 'production') {
 
 app.use(errorHandler);
 
-app.listen(port, () => console.log(`Server started => ${port}`));
+app.listen(process.env.PORT || 5000);
